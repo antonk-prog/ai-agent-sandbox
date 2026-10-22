@@ -1,0 +1,4 @@
+sandbox.env
+*.swp
+agent-data/
+agent-config/
