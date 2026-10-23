@@ -13,8 +13,8 @@ services:
     build:
       context: .
       args:
-        UID: ${HOST_UID:-1000}
-        GID: ${HOST_GID:-1000}
+        UID: ${BUILD_UID:-1000}
+        GID: ${BUILD_GID:-1000}
     image: ai-agent-sandbox:latest
     environment:
       HTTP_PROXY: http://proxy:3128
@@ -24,6 +24,8 @@ services:
       NO_PROXY: localhost,127.0.0.1,proxy
       no_proxy: localhost,127.0.0.1,proxy
       TERM: ${TERM:-xterm}
+      SYSROOT_ARM32: ${SYSROOT_ARM32:-/home/anton/cross-tools/sysroot-bullseye-armhf}
+      SYSROOT_ARM64: ${SYSROOT_ARM64:-/home/anton/cross-tools/sysroot-bullseye-arm64}
     env_file:
       - path: ./sandbox.env
         required: false
@@ -32,16 +34,18 @@ services:
     volumes:
       - ${WORKSPACE_DIR:-.}:/workspace
       - agent-home:/home/agent
+      # Sysroot'ы для кросс-компиляции (монтируются по тем же путям,
+      # что на хосте - чтобы переменные SYSROOT_* были валидны)
+      - ${CROSS_TOOLS_DIR:-/home/anton/cross-tools}:/home/anton/cross-tools:ro
       # Сессии, история и auth-токены opencode - на хосте (переживают всё)
       - ./agent-data:/home/agent/.local/share/opencode
       # Конфиг opencode (opencode.json) - на хосте
       - ./agent-config:/home/agent/.config/opencode
     working_dir: /workspace
     user: ${HOST_UID:-1000}:${HOST_GID:-1000}
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+    # Без cap_drop: ALL и no-new-privileges - иначе sudo внутри не работает
+    # (они запрещают любое повышение привилегий, setuid sudo бесполезен).
+    # Стандартный docker-набор capabilities + sudoers NOPASSWD для agent.
     pids_limit: 512
     mem_limit: 4g
     cpus: 2.0

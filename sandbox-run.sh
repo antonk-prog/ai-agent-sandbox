@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
+set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE="docker compose -f ${SCRIPT_DIR}/docker-compose.yml"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+C="docker compose -f ${DIR}/docker-compose.yml"
 
-export HOST_UID="$(id -u)"
-export HOST_GID="$(id -g)"
+export BUILD_UID="$(id -u)" BUILD_GID="$(id -g)"
+export HOST_UID="$(id -u)" HOST_GID="$(id -g)"
 export WORKSPACE_DIR="$(pwd)"
 
-# Свои папки создаём сами, иначе docker создаст их от root
-mkdir -p "${SCRIPT_DIR}/agent-data" "${SCRIPT_DIR}/agent-config"
+mkdir -p "${DIR}/agent-data" "${DIR}/agent-config"
 
-if [ $# -eq 0 ]; then
-    set -- bash
-fi
-
-${COMPOSE} up -d proxy
-${COMPOSE} build agent
-${COMPOSE} run --rm agent "$@"
+$C up -d proxy
+$C build agent
+$C run --rm agent bash
